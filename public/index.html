@@ -449,17 +449,27 @@
     return res.json()
   }
 
-  async function loadAll() {
-    const [ags, cls, barbs] = await Promise.all([
-      api('GET', '/agendamentos'),
-      api('GET', '/clientes'),
-      api('GET', '/barbeiros')
-    ])
-    if (ags) cache.agendamentos = ags
-    if (cls) cache.clientes = cls
-    if (barbs) cache.barbeiros = barbs
-    renderDashboard()
-  }
+  let paginaAtual = 1
+  let totalPaginas = 1
+
+async function loadAgendamentos(page = 1) {
+  const res = await api('GET', `/agendamentos?page=${page}&limit=10`)
+  if (!res) return
+  cache.agendamentos = res.dados
+  paginaAtual = res.paginacao.pagina
+  totalPaginas = res.paginacao.totalPaginas
+  renderDashboard()
+  const activePage = document.querySelector('.page.active')?.id?.replace('page-','')
+  if (activePage === 'agendamentos') renderAgendamentos()
+  const pag = document.createElement('div')
+pag.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:12px;padding:16px;'
+pag.innerHTML = `
+  <button class="btn btn-ghost btn-sm" onclick="loadAgendamentos(${paginaAtual-1})" ${paginaAtual<=1?'disabled':''}>← Anterior</button>
+  <span style="font-size:13px;color:var(--text-dim)">Página ${paginaAtual} de ${totalPaginas}</span>
+  <button class="btn btn-ghost btn-sm" onclick="loadAgendamentos(${paginaAtual+1})" ${paginaAtual>=totalPaginas?'disabled':''}>Próxima →</button>
+`
+document.querySelector('.table-wrap').after(pag)
+}
 
   // ─── UTILS ───────────────────────────────────────────────────
   const today = () => new Date().toISOString().split('T')[0]

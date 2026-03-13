@@ -3,18 +3,32 @@ const router = express.Router()
 const prisma = require('../prisma')
 
 // Lista todos os agendamentos
+// Lista agendamentos com paginação
 router.get('/', async (req, res) => {
   try {
-    const agendamentos = await prisma.agendamento.findMany({
-      include: {
-        cliente: true,
-        barbeiro: true
-      },
-      orderBy: {
-        criadoEm: 'desc'
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 10
+    const skip = (page - 1) * limit
+
+    const [agendamentos, total] = await Promise.all([
+      prisma.agendamento.findMany({
+        skip,
+        take: limit,
+        include: { cliente: true, barbeiro: true },
+        orderBy: { criadoEm: 'desc' }
+      }),
+      prisma.agendamento.count()
+    ])
+
+    res.json({
+      dados: agendamentos,
+      paginacao: {
+        total,
+        pagina: page,
+        limite: limit,
+        totalPaginas: Math.ceil(total / limit)
       }
     })
-    res.json(agendamentos)
   } catch (error) {
     res.status(500).json({ erro: 'Erro ao buscar agendamentos' })
   }
