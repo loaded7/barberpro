@@ -283,7 +283,7 @@
           <div class="card">
             <div class="card-header">
               <div class="card-title">Despesas do Período</div>
-              <button class="btn btn-ghost btn-sm" onclick="openModal('modal-despesa')">+ Nova</button>
+              <button class="btn btn-ghost btn-sm" onclick="openModalDespesa()">+ Nova</button>
             </div>
             <div id="rel-despesas-list"></div>
           </div>
@@ -658,7 +658,10 @@
 
   function openModalAg() { populateSelects(); document.getElementById('ag-data').value = today(); openModal('modal-ag') }
   function openModalCliente() { openModal('modal-cl') }
-  function openModalBarbeiro() { openModal('modal-barber') }
+  function openModalDespesa() { 
+  document.getElementById('desp-data').value = today()
+  openModal('modal-despesa') 
+}
 
   function updateValor() {
     const sel = document.getElementById('ag-servico')
