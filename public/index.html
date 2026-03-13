@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BarberPro</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:#0a0a0a;--surface:#111111;--surface2:#1a1a1a;--surface3:#222222;
+    --border:#2a2a2a;--gold:#c9a84c;--gold-light:#e4c06e;--gold-dim:#c9a84c33;
+    --red:#e05252;--green:#52c97a;--blue:#5294e0;--orange:#e09452;
+    --text:#f0ece4;--text-dim:#888880;--text-muted:#444440;
+    --radius:8px;--radius-lg:14px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+  /* LOGIN */
+  #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);}
+  .login-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:40px;width:380px;}
+  .login-logo{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:4px;color:var(--gold);text-align:center;}
+  .login-sub{font-size:12px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;text-align:center;margin-bottom:32px;}
+  .login-err{background:#e0525222;border:1px solid #e0525244;border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:16px;display:none;}
+
+  /* APP */
+  #app-screen{display:none;flex-direction:row;}
+  .sidebar{width:220px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+  .logo{padding:28px 20px 20px;border-bottom:1px solid var(--border);}
+  .logo-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;color:var(--gold);line-height:1;}
+  .logo-sub{font-size:10px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-top:2px;}
+  .nav{padding:16px 12px;flex:1;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius);cursor:pointer;margin-bottom:2px;font-size:13.5px;color:var(--text-dim);transition:all .2s;font-weight:500;border:1px solid transparent;}
+  .nav-item:hover{background:var(--surface2);color:var(--text);}
+  .nav-item.active{background:var(--gold-dim);color:var(--gold);border-color:#c9a84c33;}
+  .nav-item .icon{font-size:16px;width:20px;text-align:center;}
+  .sidebar-footer{padding:16px;border-top:1px solid var(--border);}
+  .user-info{font-size:12px;color:var(--text-dim);margin-bottom:8px;}
+  .main{margin-left:220px;flex:1;min-height:100vh;}
+  .topbar{height:60px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:50;}
+  .page-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;}
+  .topbar-actions{display:flex;gap:10px;align-items:center;}
+  .btn{padding:8px 16px;border-radius:var(--radius);border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;transition:all .18s;}
+  .btn-gold{background:var(--gold);color:#0a0a0a;}
+  .btn-gold:hover{background:var(--gold-light);}
+  .btn-ghost{background:transparent;color:var(--text-dim);border:1px solid var(--border);}
+  .btn-ghost:hover{background:var(--surface2);color:var(--text);}
+  .btn-sm{padding:5px 12px;font-size:12px;}
+  .btn-danger{background:#e0525222;color:var(--red);border:1px solid #e0525233;}
+  .btn-danger:hover{background:#e0525244;}
+  .content{padding:28px;}
+  .cards-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;}
+  .stat-label{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;}
+  .stat-value{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:1px;margin:6px 0 2px;line-height:1;}
+  .stat-sub{font-size:12px;color:var(--text-dim);}
+  .stat-gold .stat-value{color:var(--gold);}
+  .stat-green .stat-value{color:var(--green);}
+  .stat-blue .stat-value{color:var(--blue);}
+  .stat-orange .stat-value{color:var(--orange);}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+  .grid-3{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px;}
+  .table-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{text-align:left;padding:10px 14px;font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.2px;border-bottom:1px solid var(--border);font-weight:600;}
+  td{padding:11px 14px;border-bottom:1px solid #ffffff08;vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:#ffffff04;}
+  .badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:600;}
+  .badge::before{content:'';width:6px;height:6px;border-radius:50%;}
+  .badge-pendente{background:#e0945222;color:var(--orange)}.badge-pendente::before{background:var(--orange)}
+  .badge-confirmado{background:#5294e022;color:var(--blue)}.badge-confirmado::before{background:var(--blue)}
+  .badge-concluido{background:#52c97a22;color:var(--green)}.badge-concluido::before{background:var(--green)}
+  .badge-cancelado{background:#e0525222;color:var(--red)}.badge-cancelado::before{background:var(--red)}
+  .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .card-title{font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:1px;}
+  .modal-bg{display:none;position:fixed;inset:0;background:#00000099;z-index:999;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+  .modal-bg.open{display:flex;}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;width:480px;max-height:90vh;overflow-y:auto;position:relative;}
+  .modal-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;margin-bottom:20px;color:var(--gold);}
+  .form-group{margin-bottom:16px;}
+  .form-label{display:block;font-size:12px;color:var(--text-dim);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:1px;}
+  .form-input{width:100%;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border .2s;}
+  .form-input:focus{border-color:var(--gold);}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;}
+  .modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:20px;}
+  .avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;}
+  .page{display:none;}
+  .page.active{display:block;}
+  .barber-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;display:flex;align-items:center;gap:14px;}
+  .barber-avatar{width:52px;height:52px;border-radius:50%;font-size:20px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;}
+  .barber-name{font-weight:700;font-size:15px;margin-bottom:3px;}
+  .barber-info{font-size:12px;color:var(--text-dim);}
+  .barber-stats{margin-left:auto;text-align:right;}
+  .barber-stat-val{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);line-height:1;}
+  .barber-stat-lbl{font-size:11px;color:var(--text-dim);}
+  .chart-container{position:relative;height:220px;}
+  .history-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #ffffff08;}
+  .history-item:last-child{border-bottom:none;}
+  .history-date{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);min-width:80px;}
+  .history-service{font-size:13.5px;font-weight:600;flex:1;}
+  .history-value{font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--gold);}
+  .search-input{padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:220px;transition:border .2s;}
+  .search-input:focus{border-color:var(--gold);}
+  .fin-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #ffffff08;}
+  .fin-item:last-child{border-bottom:none;}
+  .fin-sub{font-size:11px;color:var(--text-dim);margin-top:2px;}
+  .fin-value-pos{font-family:'DM Mono',monospace;font-size:14px;color:var(--green);font-weight:600;}
+  .fin-value-neg{font-family:'DM Mono',monospace;font-size:14px;color:var(--red);font-weight:600;}
+  .empty{text-align:center;padding:40px 20px;color:var(--text-muted);font-size:14px;}
+  .empty-icon{font-size:36px;margin-bottom:10px;}
+  .action-btns{display:flex;gap:6px;}
+  .loading{text-align:center;padding:20px;color:var(--text-dim);font-size:13px;}
+  select.form-input option{background:var(--surface2);}
+  ::-webkit-scrollbar{width:5px;height:5px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">BarberPro</div>
+    <div class="login-sub">Sistema de Gestão</div>
+    <div class="login-err" id="login-err"></div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" id="login-email" type="email" placeholder="seu@email.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Senha</label>
+      <input class="form-input" id="login-senha" type="password" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn btn-gold" style="width:100%;margin-top:8px;padding:12px;" onclick="doLogin()" id="login-btn">Entrar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-title">BarberPro</div>
+      <div class="logo-sub">Sistema de Gestão</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-item active" onclick="goTo('dashboard',this)"><span class="icon">📊</span> Dashboard</div>
+      <div class="nav-item" onclick="goTo('agendamentos',this)"><span class="icon">📅</span> Agendamentos</div>
+      <div class="nav-item" onclick="goTo('clientes',this)"><span class="icon">👤</span> Clientes</div>
+      <div class="nav-item" onclick="goTo('barbeiros',this)"><span class="icon">✂️</span> Barbeiros</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info" id="user-info"></div>
+      <button class="btn btn-ghost btn-sm" style="width:100%" onclick="doLogout()">Sair</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="page-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-actions" id="topbar-actions">
+        <button class="btn btn-gold" onclick="openModalAg()">+ Novo Agendamento</button>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="cards-grid">
+          <div class="card stat-gold"><div class="stat-label">Faturamento Hoje</div><div class="stat-value" id="stat-fat">R$ 0</div><div class="stat-sub" id="stat-fat-sub">0 atendimentos</div></div>
+          <div class="card stat-green"><div class="stat-label">Faturamento Total</div><div class="stat-value" id="stat-mes">R$ 0</div><div class="stat-sub" id="stat-mes-sub">0 concluídos</div></div>
+          <div class="card stat-blue"><div class="stat-label">Agendamentos Hoje</div><div class="stat-value" id="stat-ag-hoje">0</div><div class="stat-sub" id="stat-ag-status">carregando...</div></div>
+          <div class="card stat-orange"><div class="stat-label">Total Clientes</div><div class="stat-value" id="stat-clientes">0</div><div class="stat-sub">cadastrados</div></div>
+        </div>
+        <div class="grid-3">
+          <div class="card"><div class="card-header"><div class="card-title">Agendamentos por Serviço</div></div><div class="chart-container"><canvas id="chartServicos"></canvas></div></div>
+          <div class="card"><div class="card-header"><div class="card-title">Status</div></div><div class="chart-container"><canvas id="chartStatus"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Próximos Agendamentos</div></div>
+          <div id="proximos-hoje"><div class="loading">Carregando...</div></div>
+        </div>
+      </div>
+
+      <!-- AGENDAMENTOS -->
+      <div class="page" id="page-agendamentos">
+        <div class="card">
+          <div class="card-header">
+            <div style="display:flex;gap:10px;align-items:center;">
+              <input class="search-input" placeholder="Buscar cliente..." id="search-ag" oninput="renderAgendamentos()">
+              <select class="form-input" style="width:160px;" id="filter-status" onchange="renderAgendamentos()">
+                <option value="">Todos os status</option>
+                <option>Pendente</option><option>Confirmado</option><option>Concluído</option><option>Cancelado</option>
+              </select>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ Exportar CSV</button>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Cliente</th><th>Serviço</th><th>Barbeiro</th><th>Data/Hora</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody id="tbody-ag"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLIENTES -->
+      <div class="page" id="page-clientes">
+        <div class="card">
+          <div class="card-header">
+            <input class="search-input" placeholder="Buscar cliente..." id="search-cl" oninput="renderClientes()">
+            <button class="btn btn-gold btn-sm" onclick="openModalCliente()">+ Novo Cliente</button>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Cliente</th><th>Telefone</th><th>Email</th><th>Agendamentos</th><th>Ações</th></tr></thead>
+            <tbody id="tbody-cl"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- BARBEIROS -->
+      <div class="page" id="page-barbeiros">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+          <button class="btn btn-gold" onclick="openModalBarbeiro()">+ Novo Barbeiro</button>
+        </div>
+        <div id="barbeiros-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;"></div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- MODAL AGENDAMENTO -->
+<div class="modal-bg" id="modal-ag">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-ag')">✕</button>
+    <div class="modal-title">Novo Agendamento</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Cliente</label><select class="form-input" id="ag-cliente"><option value="">Selecione...</option></select></div>
+      <div class="form-group"><label class="form-label">Barbeiro</label><select class="form-input" id="ag-barbeiro"><option value="">Selecione...</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Serviço</label>
+        <select class="form-input" id="ag-servico" onchange="updateValor()">
+          <option value="">Selecione...</option>
+          <option value="Corte" data-val="40">Corte de Cabelo — R$ 40</option>
+          <option value="Barba" data-val="30">Barba — R$ 30</option>
+          <option value="Corte + Barba" data-val="65">Corte + Barba — R$ 65</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Valor (R$)</label><input class="form-input" id="ag-valor" type="number"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Data</label><input class="form-input" id="ag-data" type="date"></div>
+      <div class="form-group"><label class="form-label">Horário</label><input class="form-input" id="ag-hora" type="time"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Observações</label><input class="form-input" id="ag-obs" placeholder="Opcional..."></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-ag')">Cancelar</button>
+      <button class="btn btn-gold" onclick="salvarAgendamento()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CLIENTE -->
+<div class="modal-bg" id="modal-cl">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-cl')">✕</button>
+    <div class="modal-title">Novo Cliente</div>
+    <div class="form-group"><label class="form-label">Nome Completo</label><input class="form-input" id="cl-nome" placeholder="João Silva"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" id="cl-tel" placeholder="(11) 99999-0000"></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="cl-email" placeholder="joao@email.com"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Observações</label><input class="form-input" id="cl-obs" placeholder="Preferências..."></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-cl')">Cancelar</button>
+      <button class="btn btn-gold" onclick="salvarCliente()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL BARBEIRO -->
+<div class="modal-bg" id="modal-barber">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-barber')">✕</button>
+    <div class="modal-title">Novo Barbeiro</div>
+    <div class="form-group"><label class="form-label">Nome</label><input class="form-input" id="barber-nome" placeholder="Carlos Barbosa"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Especialidade</label>
+        <select class="form-input" id="barber-esp"><option>Corte e Barba</option><option>Corte</option><option>Barba</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" id="barber-tel" placeholder="(11) 99999-0000"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-barber')">Cancelar</button>
+      <button class="btn btn-gold" onclick="salvarBarbeiro()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ─── CONFIG ─────────────────────────────────────────────────
+  const API = window.location.origin
+  let TOKEN = localStorage.getItem('bp_token') || ''
+  let USER = JSON.parse(localStorage.getItem('bp_user') || 'null')
+  let cache = { agendamentos: [], clientes: [], barbeiros: [] }
+
+  // ─── AUTH ────────────────────────────────────────────────────
+  async function doLogin() {
+    const email = document.getElementById('login-email').value.trim()
+    const senha = document.getElementById('login-senha').value
+    const btn = document.getElementById('login-btn')
+    const err = document.getElementById('login-err')
+    if (!email || !senha) { showErr('Preencha email e senha!'); return }
+    btn.textContent = 'Entrando...'
+    btn.disabled = true
+    try {
+      const res = await fetch(`${API}/auth/login`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha })
+      })
+      const data = await res.json()
+      if (!res.ok) { showErr(data.erro || 'Erro ao fazer login'); btn.textContent = 'Entrar'; btn.disabled = false; return }
+      TOKEN = data.token
+      USER = { nome: data.nome, role: data.role }
+      localStorage.setItem('bp_token', TOKEN)
+      localStorage.setItem('bp_user', JSON.stringify(USER))
+      initApp()
+    } catch (e) { showErr('Erro de conexão com o servidor'); btn.textContent = 'Entrar'; btn.disabled = false }
+  }
+
+  function showErr(msg) {
+    const el = document.getElementById('login-err')
+    el.textContent = msg; el.style.display = 'block'
+    setTimeout(() => el.style.display = 'none', 4000)
+  }
+
+  function doLogout() {
+    TOKEN = ''; USER = null
+    localStorage.removeItem('bp_token'); localStorage.removeItem('bp_user')
+    document.getElementById('app-screen').style.display = 'none'
+    document.getElementById('login-screen').style.display = 'flex'
+  }
+
+  function initApp() {
+    document.getElementById('login-screen').style.display = 'none'
+    document.getElementById('app-screen').style.display = 'flex'
+    if (USER) document.getElementById('user-info').textContent = '👤 ' + USER.nome
+    loadAll()
+  }
+
+  // ─── API HELPERS ─────────────────────────────────────────────
+  async function api(method, path, body) {
+    const opts = { method, headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN } }
+    if (body) opts.body = JSON.stringify(body)
+    const res = await fetch(API + path, opts)
+    if (res.status === 401) { doLogout(); return null }
+    return res.json()
+  }
+
+  async function loadAll() {
+    const [ags, cls, barbs] = await Promise.all([
+      api('GET', '/agendamentos'),
+      api('GET', '/clientes'),
+      api('GET', '/barbeiros')
+    ])
+    if (ags) cache.agendamentos = ags
+    if (cls) cache.clientes = cls
+    if (barbs) cache.barbeiros = barbs
+    renderDashboard()
+  }
+
+  // ─── UTILS ───────────────────────────────────────────────────
+  const today = () => new Date().toISOString().split('T')[0]
+  const fmt = v => 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 0 })
+  const avatarColors = ['#c9a84c','#5294e0','#52c97a','#e09452','#c952c9','#52c9c9']
+  const avatarColor = i => avatarColors[i % avatarColors.length]
+  const initials = name => name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  const badgeClass = s => ({ 'Pendente':'badge-pendente','Confirmado':'badge-confirmado','Concluído':'badge-concluido','Cancelado':'badge-cancelado' }[s] || 'badge-pendente')
+  const clienteNome = id => { const c = cache.clientes.find(c => c.id === id); return c ? c.nome : '—' }
+  const barbeiroNome = id => { const b = cache.barbeiros.find(b => b.id === id); return b ? b.nome : '—' }
+
+  // ─── NAVIGATION ──────────────────────────────────────────────
+  const pageTitles = { dashboard:'Dashboard', agendamentos:'Agendamentos', clientes:'Clientes', barbeiros:'Barbeiros' }
+  const pageActions = {
+    dashboard: '<button class="btn btn-gold" onclick="openModalAg()">+ Novo Agendamento</button>',
+    agendamentos: '<button class="btn btn-gold" onclick="openModalAg()">+ Novo Agendamento</button>',
+    clientes: '<button class="btn btn-gold" onclick="openModalCliente()">+ Novo Cliente</button>',
+    barbeiros: '<button class="btn btn-gold" onclick="openModalBarbeiro()">+ Novo Barbeiro</button>'
+  }
+
+  function goTo(page, el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'))
+    document.getElementById('page-' + page).classList.add('active')
+    el.classList.add('active')
+    document.getElementById('topbar-title').textContent = pageTitles[page]
+    document.getElementById('topbar-actions').innerHTML = pageActions[page] || ''
+    if (page === 'dashboard') renderDashboard()
+    if (page === 'agendamentos') renderAgendamentos()
+    if (page === 'clientes') renderClientes()
+    if (page === 'barbeiros') renderBarbeiros()
+  }
+
+  // ─── DASHBOARD ───────────────────────────────────────────────
+  let chartServicos, chartStatus
+  function renderDashboard() {
+    const todayStr = today()
+    const agHoje = cache.agendamentos.filter(a => a.data === todayStr)
+    const concluidos = cache.agendamentos.filter(a => a.status === 'Concluído')
+    const fatHoje = agHoje.filter(a => a.status === 'Concluído').reduce((s, a) => s + a.valor, 0)
+    const fatTotal = concluidos.reduce((s, a) => s + a.valor, 0)
+
+    document.getElementById('stat-fat').textContent = fmt(fatHoje)
+    document.getElementById('stat-fat-sub').textContent = agHoje.filter(a => a.status === 'Concluído').length + ' atendimentos'
+    document.getElementById('stat-mes').textContent = fmt(fatTotal)
+    document.getElementById('stat-mes-sub').textContent = concluidos.length + ' concluídos'
+    document.getElementById('stat-ag-hoje').textContent = agHoje.length
+    document.getElementById('stat-ag-status').textContent = agHoje.filter(a => a.status === 'Confirmado').length + ' confirmados'
+    document.getElementById('stat-clientes').textContent = cache.clientes.length
+
+    const prox = cache.agendamentos.filter(a => a.status !== 'Cancelado').sort((a, b) => b.data.localeCompare(a.data) || b.hora.localeCompare(a.hora)).slice(0, 5)
+    const proxEl = document.getElementById('proximos-hoje')
+    if (prox.length === 0) { proxEl.innerHTML = '<div class="empty"><div class="empty-icon">📅</div>Nenhum agendamento</div>' }
+    else {
+      proxEl.innerHTML = prox.map(a => `
+        <div class="history-item">
+          <div class="history-date">${a.data} ${a.hora}</div>
+          <div style="flex:1"><div style="font-size:13.5px;font-weight:600">${a.cliente ? a.cliente.nome : clienteNome(a.clienteId)}</div>
+          <div style="font-size:12px;color:var(--text-dim)">${a.servico} · ${a.barbeiro ? a.barbeiro.nome : barbeiroNome(a.barbeiroId)}</div></div>
+          <span class="badge ${badgeClass(a.status)}">${a.status}</span>
+        </div>`).join('')
+    }
+
+    const srvCount = {}
+    cache.agendamentos.forEach(a => { srvCount[a.servico] = (srvCount[a.servico] || 0) + 1 })
+    if (chartServicos) chartServicos.destroy()
+    chartServicos = new Chart(document.getElementById('chartServicos'), {
+      type: 'bar',
+      data: { labels: Object.keys(srvCount), datasets: [{ data: Object.values(srvCount), backgroundColor: '#c9a84c44', borderColor: '#c9a84c', borderWidth: 2, borderRadius: 6 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#888880' }, grid: { color: '#ffffff08' } }, y: { ticks: { color: '#888880' }, grid: { color: '#ffffff08' } } } }
+    })
+
+    const stCount = {}
+    cache.agendamentos.forEach(a => { stCount[a.status] = (stCount[a.status] || 0) + 1 })
+    if (chartStatus) chartStatus.destroy()
+    chartStatus = new Chart(document.getElementById('chartStatus'), {
+      type: 'doughnut',
+      data: { labels: Object.keys(stCount), datasets: [{ data: Object.values(stCount), backgroundColor: ['#e0945288','#5294e088','#52c97a88','#e0525288'], borderColor: ['#e09452','#5294e0','#52c97a','#e05252'], borderWidth: 2 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#888880', font: { size: 12 } } } } }
+    })
+  }
+
+  // ─── AGENDAMENTOS ────────────────────────────────────────────
+  function renderAgendamentos() {
+    const q = (document.getElementById('search-ag')?.value || '').toLowerCase()
+    const st = document.getElementById('filter-status')?.value || ''
+    let ags = cache.agendamentos.filter(a => {
+      const nome = (a.cliente ? a.cliente.nome : clienteNome(a.clienteId)).toLowerCase()
+      return nome.includes(q) && (st === '' || a.status === st)
+    }).sort((a, b) => b.data.localeCompare(a.data))
+
+    const tbody = document.getElementById('tbody-ag')
+    if (ags.length === 0) { tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">📅</div>Nenhum agendamento</div></td></tr>`; return }
+    tbody.innerHTML = ags.map(a => {
+      const nome = a.cliente ? a.cliente.nome : clienteNome(a.clienteId)
+      const barb = a.barbeiro ? a.barbeiro.nome : barbeiroNome(a.barbeiroId)
+      return `<tr>
+        <td><div style="display:flex;align-items:center;gap:8px;">
+          <div class="avatar" style="background:${avatarColor(a.clienteId)}22;color:${avatarColor(a.clienteId)}">${initials(nome)}</div>${nome}
+        </div></td>
+        <td>${a.servico}</td><td>${barb}</td>
+        <td><span style="font-family:'DM Mono',monospace;font-size:12px">${a.data} ${a.hora}</span></td>
+        <td style="font-family:'DM Mono',monospace;font-size:13px;color:var(--gold)">${fmt(a.valor)}</td>
+        <td><span class="badge ${badgeClass(a.status)}">${a.status}</span></td>
+        <td><div class="action-btns">
+          <select class="form-input" style="width:130px;padding:4px 8px;font-size:12px" onchange="updateStatus(${a.id},this.value)">
+            ${['Pendente','Confirmado','Concluído','Cancelado'].map(s => `<option${s === a.status ? ' selected' : ''}>${s}</option>`).join('')}
+          </select>
+          <button class="btn btn-danger btn-sm" onclick="delAg(${a.id})">✕</button>
+        </div></td>
+      </tr>`
+    }).join('')
+  }
+
+  async function updateStatus(id, status) {
+    await api('PATCH', `/agendamentos/${id}`, { status })
+    const ag = cache.agendamentos.find(a => a.id === id)
+    if (ag) ag.status = status
+    renderAgendamentos()
+  }
+
+  async function delAg(id) {
+    if (!confirm('Remover agendamento?')) return
+    await api('DELETE', `/agendamentos/${id}`)
+    cache.agendamentos = cache.agendamentos.filter(a => a.id !== id)
+    renderAgendamentos()
+  }
+
+  function exportCSV() {
+    const rows = [['ID','Cliente','Barbeiro','Serviço','Data','Hora','Valor','Status']]
+    cache.agendamentos.forEach(a => rows.push([a.id, a.cliente ? a.cliente.nome : clienteNome(a.clienteId), a.barbeiro ? a.barbeiro.nome : barbeiroNome(a.barbeiroId), a.servico, a.data, a.hora, a.valor, a.status]))
+    const csv = rows.map(r => r.join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = 'agendamentos.csv'; a.click()
+  }
+
+  // ─── CLIENTES ────────────────────────────────────────────────
+  function renderClientes() {
+    const q = (document.getElementById('search-cl')?.value || '').toLowerCase()
+    const cls = cache.clientes.filter(c => c.nome.toLowerCase().includes(q))
+    const tbody = document.getElementById('tbody-cl')
+    if (cls.length === 0) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">👤</div>Nenhum cliente</div></td></tr>`; return }
+    tbody.innerHTML = cls.map((c, i) => {
+      const hist = cache.agendamentos.filter(a => a.clienteId === c.id)
+      return `<tr>
+        <td><div style="display:flex;align-items:center;gap:10px">
+          <div class="avatar" style="background:${avatarColor(i)}22;color:${avatarColor(i)}">${initials(c.nome)}</div>
+          <div><div style="font-weight:600">${c.nome}</div></div>
+        </div></td>
+        <td style="font-family:'DM Mono',monospace;font-size:12px">${c.telefone || '—'}</td>
+        <td style="font-size:12px;color:var(--text-dim)">${c.email || '—'}</td>
+        <td><span style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold)">${hist.length}</span></td>
+        <td><button class="btn btn-danger btn-sm" onclick="delCliente(${c.id})">✕</button></td>
+      </tr>`
+    }).join('')
+  }
+
+  async function delCliente(id) {
+    if (!confirm('Remover cliente?')) return
+    await api('DELETE', `/clientes/${id}`)
+    cache.clientes = cache.clientes.filter(c => c.id !== id)
+    renderClientes()
+  }
+
+  // ─── BARBEIROS ───────────────────────────────────────────────
+  function renderBarbeiros() {
+    const grid = document.getElementById('barbeiros-grid')
+    if (cache.barbeiros.length === 0) { grid.innerHTML = '<div class="empty"><div class="empty-icon">✂️</div>Nenhum barbeiro</div>'; return }
+    grid.innerHTML = cache.barbeiros.map((b, i) => {
+      const ags = cache.agendamentos.filter(a => a.barbeiroId === b.id && a.status === 'Concluído')
+      const fat = ags.reduce((s, a) => s + a.valor, 0)
+      return `<div class="barber-card">
+        <div class="barber-avatar" style="background:${avatarColor(i)}22;color:${avatarColor(i)}">${initials(b.nome)}</div>
+        <div><div class="barber-name">${b.nome}</div><div class="barber-info">✂️ ${b.especialidade || '—'}</div><div class="barber-info" style="margin-top:4px">📞 ${b.telefone || '—'}</div></div>
+        <div class="barber-stats">
+          <div class="barber-stat-val">${ags.length}</div><div class="barber-stat-lbl">atendimentos</div>
+          <div style="margin-top:8px"><div class="barber-stat-val" style="font-size:16px;color:var(--green)">${fmt(fat)}</div><div class="barber-stat-lbl">faturado</div></div>
+        </div>
+      </div>`
+    }).join('')
+  }
+
+  // ─── MODALS ──────────────────────────────────────────────────
+  function openModal(id) { document.getElementById(id).classList.add('open') }
+  function closeModal(id) { document.getElementById(id).classList.remove('open') }
+
+  function populateSelects() {
+    const agCl = document.getElementById('ag-cliente')
+    agCl.innerHTML = '<option value="">Selecione...</option>' + cache.clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('')
+    const agBa = document.getElementById('ag-barbeiro')
+    agBa.innerHTML = '<option value="">Selecione...</option>' + cache.barbeiros.map(b => `<option value="${b.id}">${b.nome}</option>`).join('')
+  }
+
+  function openModalAg() { populateSelects(); document.getElementById('ag-data').value = today(); openModal('modal-ag') }
+  function openModalCliente() { openModal('modal-cl') }
+  function openModalBarbeiro() { openModal('modal-barber') }
+
+  function updateValor() {
+    const sel = document.getElementById('ag-servico')
+    const opt = sel.options[sel.selectedIndex]
+    if (opt.dataset.val) document.getElementById('ag-valor').value = opt.dataset.val
+  }
+
+  async function salvarAgendamento() {
+    const clienteId = parseInt(document.getElementById('ag-cliente').value)
+    const barbeiroId = parseInt(document.getElementById('ag-barbeiro').value)
+    const servico = document.getElementById('ag-servico').value
+    const valor = parseFloat(document.getElementById('ag-valor').value)
+    const data = document.getElementById('ag-data').value
+    const hora = document.getElementById('ag-hora').value
+    const observacoes = document.getElementById('ag-obs').value
+    if (!clienteId || !barbeiroId || !servico || !data || !hora) { alert('Preencha todos os campos!'); return }
+    const ag = await api('POST', '/agendamentos', { clienteId, barbeiroId, servico, valor, data, hora, observacoes })
+    if (ag) {
+      ag.cliente = cache.clientes.find(c => c.id === clienteId)
+      ag.barbeiro = cache.barbeiros.find(b => b.id === barbeiroId)
+      cache.agendamentos.unshift(ag)
+      closeModal('modal-ag')
+      renderAgendamentos()
+    }
+  }
+
+  async function salvarCliente() {
+    const nome = document.getElementById('cl-nome').value.trim()
+    if (!nome) { alert('Informe o nome!'); return }
+    const cl = await api('POST', '/clientes', { nome, telefone: document.getElementById('cl-tel').value, email: document.getElementById('cl-email').value, observacoes: document.getElementById('cl-obs').value })
+    if (cl) { cache.clientes.unshift(cl); closeModal('modal-cl'); renderClientes() }
+  }
+
+  async function salvarBarbeiro() {
+    const nome = document.getElementById('barber-nome').value.trim()
+    if (!nome) { alert('Informe o nome!'); return }
+    const b = await api('POST', '/barbeiros', { nome, especialidade: document.getElementById('barber-esp').value, telefone: document.getElementById('barber-tel').value })
+    if (b) { cache.barbeiros.push(b); closeModal('modal-barber'); renderBarbeiros() }
+  }
+
+  // ─── INIT ────────────────────────────────────────────────────
+  document.addEventListener('click', e => { if (e.target.classList.contains('modal-bg')) e.target.classList.remove('open') })
+  if (TOKEN) { initApp() } else { document.getElementById('login-screen').style.display = 'flex' }
+</script>
+</body>
+</html>
