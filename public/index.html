@@ -151,6 +151,7 @@
       <div class="nav-item" onclick="goTo('agendamentos',this)"><span class="icon">📅</span> Agendamentos</div>
       <div class="nav-item" onclick="goTo('clientes',this)"><span class="icon">👤</span> Clientes</div>
       <div class="nav-item" onclick="goTo('barbeiros',this)"><span class="icon">✂️</span> Barbeiros</div>
+      <div class="nav-item" onclick="goTo('relatorio',this)"><span class="icon">📈</span> Relatório</div>
     </nav>
     <div class="sidebar-footer">
       <div class="user-info" id="user-info"></div>
@@ -227,8 +228,96 @@
         <div id="barbeiros-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;"></div>
       </div>
 
+      <!-- RELATÓRIO -->
+      <div class="page" id="page-relatorio">
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-header">
+            <div class="card-title">Período</div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-ghost btn-sm" onclick="setPeriodo('hoje')">Hoje</button>
+              <button class="btn btn-ghost btn-sm" onclick="setPeriodo('semana')">Esta semana</button>
+              <button class="btn btn-ghost btn-sm" onclick="setPeriodo('mes')">Este mês</button>
+              <button class="btn btn-ghost btn-sm" onclick="setPeriodo('ano')">Este ano</button>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input class="form-input" id="rel-inicio" type="date" style="width:160px;">
+              <span style="color:var(--text-dim);font-size:13px">até</span>
+              <input class="form-input" id="rel-fim" type="date" style="width:160px;">
+              <button class="btn btn-gold btn-sm" onclick="loadRelatorio()">Buscar</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
+          <div class="card stat-gold"><div class="stat-label">Receita</div><div class="stat-value" id="rel-receita">R$ 0</div><div class="stat-sub" id="rel-ags">0 atendimentos</div></div>
+          <div class="card"><div class="stat-label">Despesas</div><div class="stat-value" id="rel-despesas" style="color:var(--red)">R$ 0</div><div class="stat-sub">no período</div></div>
+          <div class="card stat-green"><div class="stat-label">Lucro Líquido</div><div class="stat-value" id="rel-lucro">R$ 0</div><div class="stat-sub">receita - despesas</div></div>
+          <div class="card stat-blue"><div class="stat-label">Ticket Médio</div><div class="stat-value" id="rel-ticket">R$ 0</div><div class="stat-sub">por atendimento</div></div>
+        </div>
+
+        <div class="grid-2" style="margin-bottom:24px;">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Receita por Dia</div></div>
+            <div class="chart-container"><canvas id="chartRelDia"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Receita x Despesas</div></div>
+            <div class="chart-container"><canvas id="chartRelComp"></canvas></div>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-bottom:24px;">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Ranking de Serviços</div></div>
+            <div id="rel-servicos"></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Ranking de Barbeiros</div></div>
+            <div id="rel-barbeiros"></div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Despesas do Período</div>
+              <button class="btn btn-ghost btn-sm" onclick="openModal('modal-despesa')">+ Nova</button>
+            </div>
+            <div id="rel-despesas-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Últimas Receitas</div></div>
+            <div id="rel-receitas-list"></div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </main>
+</div>
+
+<!-- MODAL DESPESA -->
+<div class="modal-bg" id="modal-despesa">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-despesa')">✕</button>
+    <div class="modal-title">Nova Despesa</div>
+    <div class="form-group"><label class="form-label">Descrição</label><input class="form-input" id="desp-desc" placeholder="Aluguel, produtos..."></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Valor (R$)</label><input class="form-input" id="desp-valor" type="number" placeholder="0"></div>
+      <div class="form-group"><label class="form-label">Data</label><input class="form-input" id="desp-data" type="date"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Categoria</label>
+      <select class="form-input" id="desp-cat">
+        <option>Aluguel</option><option>Produtos</option><option>Equipamentos</option><option>Salário</option><option>Outros</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-despesa')">Cancelar</button>
+      <button class="btn btn-gold" onclick="salvarDespesa()">Salvar</button>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL AGENDAMENTO -->
@@ -383,12 +472,13 @@
   const barbeiroNome = id => { const b = cache.barbeiros.find(b => b.id === id); return b ? b.nome : '—' }
 
   // ─── NAVIGATION ──────────────────────────────────────────────
-  const pageTitles = { dashboard:'Dashboard', agendamentos:'Agendamentos', clientes:'Clientes', barbeiros:'Barbeiros' }
+  const pageTitles = { dashboard:'Dashboard', agendamentos:'Agendamentos', clientes:'Clientes', barbeiros:'Barbeiros', relatorio:'Relatório Financeiro' }
   const pageActions = {
     dashboard: '<button class="btn btn-gold" onclick="openModalAg()">+ Novo Agendamento</button>',
     agendamentos: '<button class="btn btn-gold" onclick="openModalAg()">+ Novo Agendamento</button>',
     clientes: '<button class="btn btn-gold" onclick="openModalCliente()">+ Novo Cliente</button>',
-    barbeiros: '<button class="btn btn-gold" onclick="openModalBarbeiro()">+ Novo Barbeiro</button>'
+    barbeiros: '<button class="btn btn-gold" onclick="openModalBarbeiro()">+ Novo Barbeiro</button>',
+    relatorio: '<button class="btn btn-ghost btn-sm" onclick="exportRelCSV()">⬇ Exportar CSV</button>'
   }
 
   function goTo(page, el) {
@@ -402,6 +492,7 @@
     if (page === 'agendamentos') renderAgendamentos()
     if (page === 'clientes') renderClientes()
     if (page === 'barbeiros') renderBarbeiros()
+    if (page === 'relatorio') initRelatorio()
   }
 
   // ─── DASHBOARD ───────────────────────────────────────────────
@@ -606,6 +697,165 @@
     if (!nome) { alert('Informe o nome!'); return }
     const b = await api('POST', '/barbeiros', { nome, especialidade: document.getElementById('barber-esp').value, telefone: document.getElementById('barber-tel').value })
     if (b) { cache.barbeiros.push(b); closeModal('modal-barber'); renderBarbeiros() }
+  }
+
+  // ─── RELATÓRIO ───────────────────────────────────────────────
+  let chartRelDia, chartRelComp
+  let relData = null
+
+  function initRelatorio() {
+    setPeriodo('mes')
+  }
+
+  function setPeriodo(tipo) {
+    const hoje = new Date()
+    let inicio, fim
+    fim = hoje.toISOString().split('T')[0]
+    if (tipo === 'hoje') { inicio = fim }
+    else if (tipo === 'semana') {
+      const d = new Date(hoje); d.setDate(hoje.getDate() - 6)
+      inicio = d.toISOString().split('T')[0]
+    } else if (tipo === 'mes') {
+      inicio = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}-01`
+    } else if (tipo === 'ano') {
+      inicio = `${hoje.getFullYear()}-01-01`
+    }
+    document.getElementById('rel-inicio').value = inicio
+    document.getElementById('rel-fim').value = fim
+    loadRelatorio()
+  }
+
+  async function loadRelatorio() {
+    const inicio = document.getElementById('rel-inicio').value
+    const fim = document.getElementById('rel-fim').value
+    if (!inicio || !fim) { alert('Selecione o período!'); return }
+    const data = await api('GET', `/relatorio?inicio=${inicio}&fim=${fim}`)
+    if (!data) return
+    relData = data
+    renderRelatorio(data)
+  }
+
+  function renderRelatorio(d) {
+    const ticket = d.totalAgendamentos > 0 ? d.receita / d.totalAgendamentos : 0
+    document.getElementById('rel-receita').textContent = fmt(d.receita)
+    document.getElementById('rel-despesas').textContent = fmt(d.totalDespesas)
+    document.getElementById('rel-lucro').textContent = fmt(d.lucro)
+    document.getElementById('rel-lucro').style.color = d.lucro >= 0 ? 'var(--green)' : 'var(--red)'
+    document.getElementById('rel-ticket').textContent = fmt(ticket)
+    document.getElementById('rel-ags').textContent = d.totalAgendamentos + ' atendimentos'
+
+    // Gráfico por dia
+    const dias = Object.keys(d.porDia).sort()
+    const vals = dias.map(k => d.porDia[k])
+    if (chartRelDia) chartRelDia.destroy()
+    chartRelDia = new Chart(document.getElementById('chartRelDia'), {
+      type: 'line',
+      data: { labels: dias, datasets: [{ data: vals, borderColor: '#c9a84c', backgroundColor: '#c9a84c22', borderWidth: 2, fill: true, tension: 0.4, pointBackgroundColor: '#c9a84c' }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#888880', maxTicksLimit: 7 }, grid: { color: '#ffffff08' } }, y: { ticks: { color: '#888880', callback: v => 'R$'+v }, grid: { color: '#ffffff08' } } } }
+    })
+
+    // Gráfico comparativo
+    if (chartRelComp) chartRelComp.destroy()
+    chartRelComp = new Chart(document.getElementById('chartRelComp'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Receita', 'Despesas'],
+        datasets: [{ data: [d.receita, d.totalDespesas], backgroundColor: ['#52c97a44','#e0525244'], borderColor: ['#52c97a','#e05252'], borderWidth: 2 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#888880', font: { size: 12 } } } } }
+    })
+
+    // Ranking serviços
+    const srvEl = document.getElementById('rel-servicos')
+    const srvs = Object.entries(d.servicos).sort((a, b) => b[1].total - a[1].total)
+    if (srvs.length === 0) { srvEl.innerHTML = '<div class="empty"><div class="empty-icon">✂️</div>Sem dados</div>' }
+    else { srvEl.innerHTML = srvs.map(([nome, v], i) => `
+      <div class="fin-item">
+        <div>
+          <div style="font-size:13.5px;font-weight:600">${i+1}. ${nome}</div>
+          <div class="fin-sub">${v.quantidade} atendimentos</div>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:14px;color:var(--gold);font-weight:600">${fmt(v.total)}</div>
+      </div>`).join('') }
+
+    // Ranking barbeiros
+    const barbEl = document.getElementById('rel-barbeiros')
+    const barbs = Object.entries(d.barbeiros).sort((a, b) => b[1].total - a[1].total)
+    if (barbs.length === 0) { barbEl.innerHTML = '<div class="empty"><div class="empty-icon">✂️</div>Sem dados</div>' }
+    else { barbEl.innerHTML = barbs.map(([nome, v], i) => `
+      <div class="fin-item">
+        <div>
+          <div style="font-size:13.5px;font-weight:600">${i+1}. ${nome}</div>
+          <div class="fin-sub">${v.quantidade} atendimentos</div>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:14px;color:var(--green);font-weight:600">${fmt(v.total)}</div>
+      </div>`).join('') }
+
+    // Despesas
+    const despEl = document.getElementById('rel-despesas-list')
+    if (d.despesas.length === 0) { despEl.innerHTML = '<div class="empty"><div class="empty-icon">💸</div>Nenhuma despesa</div>' }
+    else { despEl.innerHTML = d.despesas.map(dep => `
+      <div class="fin-item">
+        <div>
+          <div style="font-size:13.5px">${dep.descricao}</div>
+          <div class="fin-sub">${dep.categoria} · ${dep.data}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="font-family:'DM Mono',monospace;font-size:14px;color:var(--red);font-weight:600">-${fmt(dep.valor)}</div>
+          <button class="btn btn-danger btn-sm" onclick="delDespesa(${dep.id})">✕</button>
+        </div>
+      </div>`).join('') }
+
+    // Receitas
+    const recEl = document.getElementById('rel-receitas-list')
+    const ags = cache.agendamentos.filter(a => {
+      const inicio = document.getElementById('rel-inicio').value
+      const fim = document.getElementById('rel-fim').value
+      return a.status === 'Concluído' && a.data >= inicio && a.data <= fim
+    }).sort((a, b) => b.data.localeCompare(a.data)).slice(0, 8)
+    if (ags.length === 0) { recEl.innerHTML = '<div class="empty"><div class="empty-icon">💰</div>Nenhuma receita</div>' }
+    else { recEl.innerHTML = ags.map(a => `
+      <div class="fin-item">
+        <div>
+          <div style="font-size:13.5px;font-weight:600">${a.cliente ? a.cliente.nome : clienteNome(a.clienteId)}</div>
+          <div class="fin-sub">${a.servico} · ${a.data}</div>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:14px;color:var(--green);font-weight:600">+${fmt(a.valor)}</div>
+      </div>`).join('') }
+  }
+
+  async function salvarDespesa() {
+    const descricao = document.getElementById('desp-desc').value.trim()
+    const valor = parseFloat(document.getElementById('desp-valor').value)
+    const data = document.getElementById('desp-data').value
+    const categoria = document.getElementById('desp-cat').value
+    if (!descricao || !valor || !data) { alert('Preencha todos os campos!'); return }
+    await api('POST', '/despesas', { descricao, valor, data, categoria })
+    closeModal('modal-despesa')
+    document.getElementById('desp-desc').value = ''
+    document.getElementById('desp-valor').value = ''
+    loadRelatorio()
+  }
+
+  async function delDespesa(id) {
+    if (!confirm('Remover despesa?')) return
+    await api('DELETE', `/despesas/${id}`)
+    loadRelatorio()
+  }
+
+  function exportRelCSV() {
+    if (!relData) { alert('Carregue o relatório primeiro!'); return }
+    const rows = [['Tipo','Descrição','Valor','Data']]
+    cache.agendamentos.filter(a => {
+      const inicio = document.getElementById('rel-inicio').value
+      const fim = document.getElementById('rel-fim').value
+      return a.status === 'Concluído' && a.data >= inicio && a.data <= fim
+    }).forEach(a => rows.push(['Receita', a.servico + ' - ' + (a.cliente ? a.cliente.nome : ''), a.valor, a.data]))
+    relData.despesas.forEach(d => rows.push(['Despesa', d.descricao, -d.valor, d.data]))
+    const csv = rows.map(r => r.join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = 'relatorio.csv'; a.click()
   }
 
   // ─── INIT ────────────────────────────────────────────────────
